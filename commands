@@ -1,0 +1,182 @@
+//Show the size of the Docker image:
+$ docker images <image>
+//– example –
+$ docker images nginx
+
+//Show all layers the Docker image is composed of:
+$ docker history <image>
+//– example –
+$ docker history nginx:latest
+IMAGE         CREATED        CREATED BY                                      SIZE
+9beeba249f3e  9 days ago     /bin/sh -c #(nop)  CMD ["nginx" "-g" "daemon…   0B
+<missing>     9 days ago     /bin/sh -c ln -sf /dev/stdout /var/log/nginx…   22B
+<missing>     9 days ago     /bin/sh -c set -x     && addgroup --system -…   57.6MB
+<missing>     10 days ago    /bin/sh -c #(nop) ADD file:7780c81c33e6cc5b6…   69.2MB
+//Why missing? The <missing> value in the IMAGE field for all but one of the layers of the image, is misleading and a little unfortunate. 
+It conveys the suggestion of an error, but there is no error as layers are no longer synonymous with a corresponding image and ID.
+
+//Don’t truncate output:
+$ docker history --no-trunc <image>
+
+//What’s a Docker Image?
+//Do Not Confuse: Docker images themselves are never “started” and never “running”. 
+//The docker run command takes the Docker image as a template and produces a container from it.
+//Images are created from a Dockerfile with the docker build command.
+//Images are stored in a Docker registry, such as Docker Hub and can be downloaded with the docker pull command:
+$ docker pull ubuntu
+$ docker images
+REPOSITORY         TAG                IMAGE ID           CREATED            SIZE
+ubuntu             latest             00fd29ccc6f1       2 weeks ago        111MB
+
+//What are the Docker Layers?
+//Docker images are designed to be composed of a series of layers.Each instruction in a Dockerfile creates a layer in the image.
+//Each layer is a set of differences from the previous layer.To show the layers of a Docker image, run the docker history command.
+//***Each layer of a Docker image is read-only.
+$ docker history 00fd29ccc6f1
+IMAGE         CREATED       CREATED BY                                      SIZE
+00fd29ccc6f1  2 weeks ago   /bin/sh -c #(nop)  CMD ["/bin/bash"]            0B
+<missing>     2 weeks ago   /bin/sh -c mkdir -p /run/systemd && echo '...   7B
+<missing>     2 weeks ago   /bin/sh -c sed -i 's, except the top one,/...   2.76kB
+<missing>     2 weeks ago   /bin/sh -c rm -rf /var/lib/apt/lists/*          0B
+<missing>     2 weeks ago   /bin/sh -c set -xe   && echo '#!/bin/sh' >...   745B
+<missing>     2 weeks ago   /bin/sh -c #(nop) ADD file:f5a2d04c3f3cafa...   111MB
+
+//What’s a Docker Container?
+//The Main Difference: The main difference between a container and an image is the top writable layer.
+//Containers are created from images with the docker run command and can be listed with the docker ps command.
+
+$ docker run -it ubuntu /bin/bash
+root@af588b25a4ad:/# 
+
+$ docker ps
+CONTAINER ID   IMAGE    COMMAND      CREATED         STATUS         PORTS   NAMES
+af588b25a4ad   ubuntu   "/bin/bash"  24 seconds ago  Up 23 seconds          jovial
+
+//To create a container, Docker engine takes an image, adds the top writable layer and initializes various settings (network ports, 
+//container name, ID and resource limits).All write operation inside the container are stored in this writable layer, 
+//so when the container is deleted, the writable layer is also deleted while the underlying image remains unchanged.
+//As each container has its own writable container layer, and all changes are stored in this container layer, 
+//multiple containers can share access to the same underlying image and yet have their own data state.
+
+//Docker: Remove Image – Remove All Images – Remove Unused
+//List Docker Images
+$ docker images
+
+//Remove Docker Image
+$ docker rmi <image>
+
+//Force removal of the Docker image:
+$ docker rmi -f <image>
+
+//Remove Unused Docker Images, 
+//Remove all unused Docker images:
+$ docker image prune -a -f
+
+//Remove All Docker Images
+//Force removal of the all Docker images:
+$ docker rmi -f $(docker images -q)
+
+//List running Docker containers:
+$ docker ps
+//List all Docker containers:
+$ docker ps -a
+//Remove Docker container by CONTAINER ID or NAME:
+$ docker rm <container>
+//Force removal of a running Docker container:
+$ docker rm -f <container>
+
+//Remove all stopped (unused) Docker containers:
+$ docker container prune -f
+//Force removal of the all Docker containers, including running containers:
+$ docker rm -f $(docker ps -a -q)
+
+$ docker history swarm
+//docker inspect command to review the layer digests associated with the image:
+$ docker inspect jboggs/my_image:latest
+
+//Once you have a Docker image, you can tag it as follows:
+$ docker tag <imageId> <repoName>/<imageName>:<tagName>
+– example –
+$ docker images
+REPOSITORY       TAG              IMAGE ID            CREATED             SIZE
+<none>           <none>           83eea1180916        27 seconds ago      6.96MB
+$ docker tag 83eea1180916 local/app:0.1
+$ docker images
+REPOSITORY       TAG              IMAGE ID            CREATED             SIZE
+local/app        0.1              83eea1180916        39 seconds ago      6.96MB
+
+Tag Docker image with multiple tags:
+
+$ docker tag 83eea1180916 local/app:staging
+$ docker tag 83eea1180916 local/app:stable
+
+$ docker images
+REPOSITORY       TAG              IMAGE ID            CREATED             SIZE
+local/app        0.1              83eea1180916        39 seconds ago      6.96MB
+local/app        staging          83eea1180916        39 seconds ago      6.96MB
+local/app        stable           83eea1180916        39 seconds ago      6.96MB
+
+Build Docker Image With Tags
+Tag Docker image during a build:
+
+$ docker build -t <repoName>/<imageName>:<tagName> .
+– example –
+$ docker build -t local/app:latest .
+Build Docker image with multiple tags:
+
+$ docker build -t local/app:latest -t local/app:0.1 .
+
+//The docker rmi command serves for deleting Docker images, but if the image is tagged with more than one tag, 
+//it will remove not image, but tag:
+
+$ docker rmi <repoName>/<imageName>:<tagName>
+– example –
+$ docker images
+REPOSITORY       TAG              IMAGE ID            CREATED             SIZE
+local/app        0.1              884484c99f71        39 minutes ago      6.96MB
+local/app        latest           884484c99f71        39 minutes ago      6.96MB
+
+$ docker rmi local/app:latest
+Untagged: local/app:latest
+
+$ docker images
+REPOSITORY       TAG              IMAGE ID            CREATED             SIZE
+local/app        0.1              884484c99f71        39 minutes ago      6.96MB
+
+//Re-Tag Docker Image
+//Change Docker image tag:
+$ docker images
+REPOSITORY       TAG              IMAGE ID            CREATED             SIZE
+local/app        0.1              83eea1180916        15 minutes ago      6.96MB
+local/app        staging          83eea1180916        15 minutes ago      6.96MB
+
+$ docker tag 83eea1180916 local/app:latest
+$ docker rmi local/app:staging
+Untagged: local/app:staging
+
+$ docker images
+REPOSITORY       TAG              IMAGE ID            CREATED             SIZE
+local/app        0.1              83eea1180916        15 minutes ago      6.96MB
+local/app        latest           83eea1180916        15 minutes ago      6.96MB
+
+//Start a container from a Docker image in a foreground:
+$ docker run <image>
+$ docker run <image>:<tag>
+$ docker run <registry>:<port>/<repository>/<image>:<tag>
+
+//Start a Docker container in a background:
+$ docker run -d <image>
+//Start a Docker container with an interactive shell session of bash or sh:
+$ docker run -it <image> /bin/bash
+- or -
+docker run -it <image> /bin/sh
+
+//Install docker-compose using pip:
+$ sudo pip install docker-compose
+//Check the docker-compose version:
+$ docker-compose --version
+docker-compose version 1.19.0, build 9e633ef
+//Upgrade docker-compose to the latest version:
+$ pip install docker-compose --upgrade
+//Uninstall docker-compose using pip:
+$ pip uninstall docker-compose
