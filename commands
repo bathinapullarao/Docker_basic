@@ -1,7 +1,5 @@
 //Show the size of the Docker image:
 $ docker images <image>
-//– example –
-$ docker images nginx
 
 //Show all layers the Docker image is composed of:
 $ docker history <image>
