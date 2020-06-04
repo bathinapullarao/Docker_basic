@@ -1,0 +1,24 @@
+Python: Install Pip
+To install the latest version of pip, run the below commands depending on your OS.
+
+Install Pip on MacOS
+Install pip on MacOS, using easy_install command and upgrade pip to the latest version:
+
+$ sudo easy_install pip
+$ sudo pip install --upgrade pip
+Install Pip in Ubuntu
+Install pip in Ubuntu, using apt-get package manager:
+
+$ sudo apt-get update
+$ sudo apt-get install python-pip
+$ sudo pip install --upgrade pip
+Install Pip in CentOS
+Install pip in CentOS from EPEL repository, using yum package manager:
+
+$ sudo yum update
+$ sudo yum install epel-release
+$ sudo yum install python-pip
+# CentOS-7 and higher
+$ sudo pip install --upgrade pip
+# CentOS-6 (the last stable version of PIP that is compatible with Python 2.6)
+$ sudo pip install pip==9.0.3
